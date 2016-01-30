@@ -13,17 +13,20 @@
 @interface DataManager : NSObject
 
 
+// The data manager is a proxy to all core data logic, so as to decouple it from all the UI logic.
+
+
 @property (nonatomic, strong) NSArray * gamesForSale;
 
 + (DataManager *) sharedDataManager;
 
 - (void) insertUserWithName: (NSString *) name;
 - (void) insertPlatformWithName: (NSString *) name relationship:(NSManagedObjectID *)user;
-
+- (void) insertGamePurchase: (GameForSale *) game relationship: (NSManagedObjectID *) platform;
 
 - (void) deleteRecordWithID: (NSManagedObjectID *) objectId;
 
-- (void) insertGamePurchase: (GameForSale *) game relationship: (NSManagedObjectID *) platform;
+
 
 
 @end

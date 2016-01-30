@@ -50,7 +50,7 @@ typedef NS_ENUM(NSInteger, operationType){
     self = [super init];
     if (self)
     {
-        [self managedObjectContext];
+        [self managedObjectContext]; // This creates the store, the coordinator and the main thread context
         self.coreDataQueue = [NSOperationQueue new];
         self.coreDataQueue.maxConcurrentOperationCount = 5;
     }
@@ -70,6 +70,95 @@ typedef NS_ENUM(NSInteger, operationType){
      [self serializeTransaction:block protected:NO];
 }
 
+
+
+
+
+
+#pragma mark - Helpers
+#pragma mark
+
+
+
+-(NSManagedObjectContext *) backgroundContext
+{
+    NSManagedObjectContext * context = [[NSManagedObjectContext alloc]initWithConcurrencyType:NSPrivateQueueConcurrencyType];
+    context.parentContext = self.mainThreadContext;
+    context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy;
+    
+    return context ;
+}
+
+
+-(void) serializeTransaction:(CoreDataSerializedBlock) block protected: (BOOL) protected
+{
+    
+    /* This is where the magic happens. 
+     
+     All transactions are processed against a on-demand background child context which is instantiated for the lifetime and the transaction and then saved and discarded. The save is propagated to to the parent (the main thread context) so that the changes surface to the store.
+     
+     All write/protected operations are 'barriered' through dependencies defined when the operation is added to the queue (writes will just be dependent on all pending operations, and reads will be dependents only on those pending operations in the queue which are writes).
+     
+     These conditions met, transactions, be them reads or writes, will never be faced with a context which is out of sync with the store. Since only writes can modify the store, and writes will only get servered with a context once the previous write has completed and its changes are surfaced to the main thread context, from which the new work context is drawn.
+     
+     */
+    
+    NSBlockOperation * coreDataOperation = [NSBlockOperation blockOperationWithBlock:^{
+        
+        NSManagedObjectContext * context = [self backgroundContext];
+        
+        __block __weak NSManagedObjectContext * weakContext = context;
+        
+        
+        [context performBlockAndWait:^
+         {
+             __strong NSManagedObjectContext * strongContext = weakContext;
+             
+             block(strongContext);
+             
+             [strongContext save:nil];
+             
+             __block __weak NSManagedObjectContext * weakParentContext = strongContext.parentContext;
+             
+             [strongContext.parentContext performBlockAndWait:^{
+                 
+                 [weakParentContext save:nil];
+             }];
+         }];
+        
+    }];
+    
+    if (protected)  // enforcing the dependencies
+    {
+        coreDataOperation.name = [NSString stringWithFormat:@"%ld", (long)OperationTypeWrite];
+    }
+    else
+    {
+        coreDataOperation.name = [NSString stringWithFormat:@"%ld", (long)OperationTypeRead];
+    }
+    
+    
+    @synchronized(self)  //Synchronizing access to the queue! Multiple threads could be in there at the same time
+    {
+        for (NSBlockOperation * operation in self.coreDataQueue.operations)
+        {
+             // enforcing the dependencies
+            if (protected)
+            {
+                 [coreDataOperation addDependency:operation];
+            }
+            else if ([operation.name isEqualToString:[NSString stringWithFormat:@"%ld", (long)OperationTypeWrite]])
+            {
+                [coreDataOperation addDependency:operation];
+            }
+            
+        }
+        
+        [self.coreDataQueue addOperation:coreDataOperation];
+    }
+
+    
+}
 
 #pragma mark - Boilerplate code
 #pragma mark
@@ -100,7 +189,7 @@ typedef NS_ENUM(NSInteger, operationType){
     }
     
     // Create the coordinator and store
-     
+    
     _persistentStoreCoordinator = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:[self managedObjectModel]];
     NSURL *storeURL = [[self applicationDocumentsDirectory] URLByAppendingPathComponent:@"CoreDataStack.sqlite"];
     NSError *error = nil;
@@ -136,98 +225,6 @@ typedef NS_ENUM(NSInteger, operationType){
     [_mainThreadContext setPersistentStoreCoordinator:coordinator];
     return _mainThreadContext;
 }
-
-
-
-#pragma mark - Helpers
-#pragma mark
-
-
-
--(NSManagedObjectContext *) backgroundContext
-{
-    NSManagedObjectContext * context = [[NSManagedObjectContext alloc]initWithConcurrencyType:NSPrivateQueueConcurrencyType];
-    context.parentContext = self.mainThreadContext;
-    context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy;
-    
-    return context ;
-}
-
--(void) tryingOutBlockWithBlock: (MyTestBlock) block
-{
-    
-    if (block)
-    {
-        NSString * aString = block(19);
-        
-        NSLog(@"This is the string produced by the block: '%@'", aString);
-    }
-
-    
-}
-
--(void) serializeTransaction:(CoreDataSerializedBlock) block protected: (BOOL) protected
-{
-    
-    //TODO: There's probably a memory leak in there
-    
-    NSBlockOperation * coreDataOperation = [NSBlockOperation blockOperationWithBlock:^{
-        
-        NSManagedObjectContext * context = [self backgroundContext];
-        __block __weak NSManagedObjectContext * weakContext = context;
-        
-        
-        [context performBlockAndWait:^
-         {
-             __strong NSManagedObjectContext * strongContext = weakContext;
-             
-             block(strongContext);
-             
-             [strongContext save:nil];
-             
-             __block __weak NSManagedObjectContext * weakParentContext = strongContext.parentContext;
-             
-             [strongContext.parentContext performBlockAndWait:^{
-                 
-                 [weakParentContext save:nil];
-             }];
-         }];
-        
-    }];
-    
-    if (protected)
-    {
-        coreDataOperation.name = [NSString stringWithFormat:@"%ld", (long)OperationTypeWrite];
-    }
-    else
-    {
-        coreDataOperation.name = [NSString stringWithFormat:@"%ld", (long)OperationTypeRead];
-    }
-    
-    
-    @synchronized(self)
-    {
-        for (NSBlockOperation * operation in self.coreDataQueue.operations)
-        {
-            
-            if (protected)
-            {
-                 [coreDataOperation addDependency:operation];
-            }
-            else if ([operation.name isEqualToString:[NSString stringWithFormat:@"%ld", (long)OperationTypeWrite]])
-            {
-                [coreDataOperation addDependency:operation];
-            }
-            
-        }
-        
-        [self.coreDataQueue addOperation:coreDataOperation];
-    }
-
-    
-}
-
-
 
 
 

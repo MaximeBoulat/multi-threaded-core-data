@@ -16,6 +16,8 @@
 @property (nonatomic, weak) id <NavigationResponder> navigationResponder;
 
 
+/* This view controller is also powered by NSFetchedResultsController, even though it only feeds off a single record
+ The loadGame method will configure its FRC for the record.*/
 -(void) loadGame: (Game*) game;
 
 

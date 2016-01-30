@@ -57,13 +57,12 @@ NavigationResponder
 - (void)viewDidLoad {
     [super viewDidLoad];
     
+    
+    /* All the lists are synchronized with the data in the core data store through the use of NSFetchedResultsController configured with the approproate fetch request. There is no hard depency between user input and UI updates. The user input (delete row/add record) triggers some data activity (in the DataManager layer). The NSFetchedResultsControllers delegate methods in turn notify the UI of changes in the data layer.
+     The only exception is the Store list, which is populated with a traditional array of non-persistent objects
+     */
+    
     NSFetchRequest * request;
-    
-    // Uncomment the following line to preserve selection between presentations.
-    // self.clearsSelectionOnViewWillAppear = NO;
-    
-    // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-    // self.navigationItem.rightBarButtonItem = self.editButtonItem;
     
     switch (self.currentMode)
     {
@@ -121,26 +120,6 @@ NavigationResponder
     
 }
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
-
-
- 
- // In a storyboard-based application, you will often want to do a little preparation before navigation
- - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
-
-     
-     if ([segue.identifier isEqualToString:@"PresentStore"]) 
-     {
-         MainTableViewController * store = ((UINavigationController*)segue.destinationViewController).viewControllers[0];
-         store.currentMode = TableModeStore;
-         
-     }
-     
- }
- 
 
 #pragma mark - table view
 #pragma mark
@@ -169,6 +148,9 @@ NavigationResponder
 {
      
     UITableViewCell * returnCell;
+    
+    
+    /* The table's data source is always a NSFetchedResultsController fetched objects, except in the case of the Store list, where it is a standard array which resides in the Datamanager(could have pointed to by the view controller to make it more MVC but since it's in essence static, I'd rather not have multiple references to it) */
     
     switch (self.currentMode)
     {
@@ -216,17 +198,11 @@ NavigationResponder
             break;
     }
     
-     
-
-    
-    // Configure the cell...
     
     return returnCell;
 }
 
 
-
-// Override to support conditional editing of the table view.
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
 {
     if (self.currentMode == TableModeStore)
@@ -241,8 +217,6 @@ NavigationResponder
 }
 
 
-
-// Override to support editing the table view .
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
 {
     if (editingStyle == UITableViewCellEditingStyleDelete)
@@ -255,7 +229,11 @@ NavigationResponder
 -(void) tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     
-
+    /* All lists provide lateral navigation on the splitviewcontroller's master pane except for:
+     *the games list which will populate the split's detail pane with game details.
+     *the store list which invokes its delegate to execute a data transaction and modal dismissal (see didPickGame:)
+     The subsequent lists need a reference called relationshipObject on which to predicate their FetchedResultsController's request. For Platforms it is a Player, for Games it is a Platform. Those relationships are enforced in the data layer and in the database schema.
+     The currentMode variable provides for state under which to configure its appesarance and behavior*/
     
     switch (self.currentMode)
     {
@@ -305,13 +283,16 @@ NavigationResponder
 - (IBAction)unwindModal:(UIStoryboardSegue *)unwindSegue
 {
     
-    
+    // This is apparently mandatory to implement the unwind (Exit) segue in the storyboard
 }
 
 
 
 - (IBAction)didPressPlusButton:(UIBarButtonItem *)sender
 {
+    
+    /* Pressing the '+' button from the Games list invokes the Store screen (where user can 'purchase' games to add them to their personal inventory. Pressing the '+' button anywhere else displays a alertview from a record can be inserted with a custom name.*/
+    
     if (self.currentMode == TableModeGame)
     {
         UINavigationController * storeNav = [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"MainTableNav"];
@@ -348,6 +329,10 @@ NavigationResponder
 
 #pragma mark - NSFetchedResultsController protocol
 #pragma mark
+
+
+
+// This is boilerplate NSFetchedResultsControllerDelegate implementation, keeps the table synchronized with the underlying data
 
 - (void)controllerWillChangeContent:(NSFetchedResultsController *)controller
 {
@@ -396,6 +381,8 @@ NavigationResponder
 #pragma mark - Game Sale protocol
 #pragma mark
 
+// The store list is reporting to the games list that the user has purchased a game. Both are instances of the same class.
+
 - (void) didPickGame: (GameForSale *) game
 {
     [self dismissViewControllerAnimated:YES completion:nil];
@@ -406,11 +393,13 @@ NavigationResponder
 #pragma mark - NavigationResponder
 #pragma mark
 
+// THe detail pane is reporting to the master that the data source it's feeding from has been deleted. Letting the master make decisions about detail pane uypdates.
 
 -(void) unwindNavigation: (UIViewController *) viewController
 {
-    UIViewController * emptyState =  [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"EmptyStateVC"];
     
+    // Master will populate the detail pane with the empty state screen
+    UIViewController * emptyState =  [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"EmptyStateVC"];
     [self showDetailViewController:emptyState sender:self];
     
 }
@@ -419,6 +408,7 @@ NavigationResponder
 #pragma mark - Helpers
 #pragma mark
 
+// helper function to interface with the Data layer
 
 - (void) addRecordWithName: (NSString*) name
 {

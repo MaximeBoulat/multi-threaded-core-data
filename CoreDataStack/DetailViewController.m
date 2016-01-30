@@ -30,6 +30,7 @@ NSFetchedResultsControllerDelegate
 
 -(void) loadGame: (Game*) game
 {
+    /* Configuring the FRC to the data source. Using KVO to prevent the UI, especially detail-type UIs which are often editable, from ever becoming des-synchronized with the underlying data. We dont want the user making edits on an object which no longer exists, and we dont want a user viewing a detail screen which is outdated.*/
     
     NSFetchRequest * request = [[NSFetchRequest alloc]initWithEntityName:@"Game"];
     request.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES]];
@@ -43,19 +44,9 @@ NSFetchedResultsControllerDelegate
 - (void)viewDidLoad
 {
     
-    [self.gameFRC performFetch:nil];
-    
-    Game * theGame = self.gameFRC.fetchedObjects [0];
-    
-    
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
     
-    self.gameImageView.image = [UIImage imageNamed:theGame.name];
-    self.gameNamelabel.text = theGame.name;
-    
-
-
+    [self loadScreen];
     
 }
 
@@ -68,6 +59,7 @@ NSFetchedResultsControllerDelegate
 #pragma mark - Actions
 #pragma mark
 
+/* Again, no hard-wired depencies between data-altering user input and interface updates, the interface updates are processed asynchronously from notification observers (FRC protocol).*/
 
 - (IBAction)didPressDelete:(UIBarButtonItem *)sender
 {
@@ -85,9 +77,14 @@ NSFetchedResultsControllerDelegate
     
     switch (type)
     {
-        case NSFetchedResultsChangeDelete:
+        case NSFetchedResultsChangeDelete: // The data source has been deleted, notify the master to let it unwind navigation (containment)
         {
             [self.navigationResponder unwindNavigation:self];
+        }
+            break;
+        case NSFetchedResultsChangeUpdate:  // The data source has changes, update the screen
+        {
+            [self loadScreen];
         }
             break;
         default:
@@ -95,8 +92,18 @@ NSFetchedResultsControllerDelegate
     }
 }
 
+#pragma mark - Helpers
+#pragma mark
 
 
+-(void) loadScreen
+{
+    [self.gameFRC performFetch:nil];
+    Game * theGame = self.gameFRC.fetchedObjects [0];
+    self.gameImageView.image = [UIImage imageNamed:theGame.name];
+    self.gameNamelabel.text = theGame.name;
+    
+}
 
 
 

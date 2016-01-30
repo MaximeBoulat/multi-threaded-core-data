@@ -12,18 +12,23 @@
 typedef void(^CoreDataSerializedBlock)(NSManagedObjectContext *context);
 
 
-typedef NSString* (^MyTestBlock)(int x);
+/* This Core data implementation offers two major advantages:
+ * enforces thread safety when core data transactions are requested from the background
+ * serialization of core data transactions using dependencies and a private queue to prevent multiple transactions to modify the same records concurrently
+ */
 
 @interface CoreDataManager : NSObject
 
-@property (readonly, strong, nonatomic) NSManagedObjectContext *mainThreadContext;
+@property (readonly, strong, nonatomic) NSManagedObjectContext *mainThreadContext; // This main thread context is leverages by the NSFetchedResultsControllers in the UI. It is not recommended to use it to write to Core Data, since doing so would bypass the serialization enforced in coordinateWriting/coordinateReading.
 
 
 +(CoreDataManager *) sharedCoreDataManager;
--(void) tryingOutBlockWithBlock: (MyTestBlock) block;
 
 
+// The coordinateWriting API will 'barrier' the block parameter, preventing it from running concurrently to other blocks
 -(void) coordinateWriting:(CoreDataSerializedBlock)block;
+
+// Read transactions are harmless, therefore they are not 'barriered' in the queue, however they must be prevented from running concurrently to write transactions
 -(void) coordinateReading:(CoreDataSerializedBlock)block;
 
 
