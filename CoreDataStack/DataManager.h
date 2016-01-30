@@ -10,6 +10,8 @@
 #import <CoreData/CoreData.h>
 #import "GameForSale.h"
 
+
+
 @interface DataManager : NSObject
 
 
@@ -17,6 +19,7 @@
 
 
 @property (nonatomic, strong) NSArray * gamesForSale;
+@property (nonatomic, assign) BOOL stressing;
 
 + (DataManager *) sharedDataManager;
 
@@ -25,6 +28,10 @@
 - (void) insertGamePurchase: (GameForSale *) game relationship: (NSManagedObjectID *) platform;
 
 - (void) deleteRecordWithID: (NSManagedObjectID *) objectId;
+
+
+-(void) startStressTestWithRelationhip: (NSManagedObjectID *) user;
+-(void) stopStressTest;
 
 
 

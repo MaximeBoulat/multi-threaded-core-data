@@ -20,6 +20,8 @@
 #import "DetailViewController.h"
 
 
+#define STRESS_TEST 0
+
 
 @interface MainTableViewController ()
 <
@@ -262,6 +264,7 @@ NavigationResponder
             [self showDetailViewController:detailNav sender:self];
             
         }
+            break;
         case TableModeStore:
         {
             [self.gamePurchaseDelegate didPickGame:[DataManager sharedDataManager].gamesForSale [indexPath.row]];
@@ -286,7 +289,7 @@ NavigationResponder
     // This is apparently mandatory to implement the unwind (Exit) segue in the storyboard
 }
 
-
+ 
 
 - (IBAction)didPressPlusButton:(UIBarButtonItem *)sender
 {
@@ -295,13 +298,32 @@ NavigationResponder
     
     if (self.currentMode == TableModeGame)
     {
-        UINavigationController * storeNav = [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"MainTableNav"];
+        if (STRESS_TEST)
+        {
+            if ([DataManager sharedDataManager].stressing)
+            {
+                [[DataManager sharedDataManager] stopStressTest];
+            }
+            else
+            {
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,0), ^{
+                    
+                    [[DataManager sharedDataManager] startStressTestWithRelationhip:self.relationshipObject.objectID];
+                });
+            }
+        }
+        else
+        {
+            UINavigationController * storeNav = [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"MainTableNav"];
+            
+            MainTableViewController * store = storeNav.viewControllers [0];
+            store.currentMode = TableModeStore;
+            store.gamePurchaseDelegate = self;
+            
+            [self presentViewController:storeNav animated:YES completion:nil];
+        }
         
-        MainTableViewController * store = storeNav.viewControllers [0];
-        store.currentMode = TableModeStore;
-        store.gamePurchaseDelegate = self;
-        
-        [self presentViewController:storeNav animated:YES completion:nil];
+
     }
     else
     {

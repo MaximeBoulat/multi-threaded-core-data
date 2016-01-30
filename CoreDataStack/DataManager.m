@@ -17,8 +17,18 @@
 @interface DataManager ()
 
 
+@property (nonatomic, strong) NSOperationQueue * stressTestQueue;
+
+
+
 
 @end
+
+typedef NS_ENUM(NSInteger, StressOperationType) {
+    StressOperationTypeRead,
+    StressOperationTypeInsert,
+    StressOperationTypeDelete
+};
 
 @implementation DataManager
 
@@ -47,12 +57,14 @@
     if (self)
     {
         [self prepareGameStopInventory];
+        self.stressTestQueue = [NSOperationQueue new];
+        self.stressTestQueue.maxConcurrentOperationCount = 20;
     }
     return self;
 }
 
 
-#pragma mark - Utilities
+#pragma mark - Public methods
 #pragma mark
 
 - (void) insertUserWithName: (NSString *) name
@@ -63,7 +75,7 @@
         Player * newPlayer = [NSEntityDescription insertNewObjectForEntityForName:@"Player" inManagedObjectContext:context];
         newPlayer.name = name;
         
-    }];
+    }identifier:@"insertUserWithName"];
 }
 
 
@@ -75,7 +87,7 @@
         newPlatform.name = name;
         newPlatform.player = [context  existingObjectWithID:user error:nil];
         
-    }];
+    }identifier:@"insertPlatformWithName"];
 }
 
 - (void) insertGamePurchase: (GameForSale *) game relationship: (NSManagedObjectID *) platform
@@ -86,7 +98,7 @@
         newgame.name = game.name;
         newgame.platform = [context  existingObjectWithID:platform error:nil];
         
-    }];
+    }identifier:@"insertGamePurchase"];
     
     
 }
@@ -98,7 +110,135 @@
           NSManagedObject * record = [context existingObjectWithID:objectId error:nil];
           [context deleteObject:record];
           
-      }];
+      } identifier:@"deleteRecordWithID"];
+    
+    
+}
+
+
+
+
+
+-(void) startStressTestWithRelationhip: (NSManagedObjectID *) user
+{
+    
+    self.stressing = YES;
+    
+    
+    void (^writeBlock) (GameForSale*)= ^(GameForSale * game) {
+        
+        [self insertGamePurchase:game relationship:user];
+        
+    };
+    
+    
+    void (^readBlock) (void) = ^{
+        
+        [[CoreDataManager sharedCoreDataManager] coordinateReading:^(NSManagedObjectContext *context) {
+            
+            NSFetchRequest * request = [NSFetchRequest fetchRequestWithEntityName:@"Game"];
+            
+           NSArray * games = [context executeFetchRequest:request error:nil];
+            
+            
+            for (Game * game in games)
+            {
+                NSLog(@"Found game with name: %@", game.name);
+            }
+            
+        } identifier:@"readBlock"];
+        
+    };
+    
+    
+    void (^deleteBlock) (void) = ^{
+        
+              [[CoreDataManager sharedCoreDataManager] coordinateWriting:^(NSManagedObjectContext *context) {
+                 
+                  // Delete random ranges of objects
+                  
+                  NSFetchRequest * request = [NSFetchRequest fetchRequestWithEntityName:@"Game"];
+                  NSArray * games = [context executeFetchRequest:request error:nil];
+                  
+                  NSInteger index = arc4random() %games.count;
+                  
+                  for (int i = 0; i<index; i++)
+                  {
+                      Game * game = games[i];
+                      [context deleteObject:game];
+                  }
+                  
+                  
+              }identifier:@"deleteBlock"];
+        
+    };
+    
+    
+    while (self.stressing)
+    {
+        
+        [self.stressTestQueue addOperationWithBlock:^{
+            
+            NSInteger operationtype = arc4random() %3;
+            
+            switch (operationtype) {
+                case StressOperationTypeInsert: // insert 20 random records
+                {
+                    int count = 0;
+                    
+                    while (count <= 20)
+                    {
+                        count ++;
+                        
+                        NSInteger gameIndex = arc4random() %self.gamesForSale.count;
+                        
+                        writeBlock ((GameForSale*) self.gamesForSale[gameIndex]);
+                        
+                    }
+                }
+                    break;
+                case StressOperationTypeDelete: // delete random range of records
+                {
+                    
+                    deleteBlock();
+                    
+                }
+                    break;
+                case StressOperationTypeRead: // Attempt to read the records
+                {
+                    
+                    int count = 0;
+                    
+                    while (count <= 4)
+                    {
+                        count ++;
+                        readBlock();
+                    }
+                    
+                }
+                    break;
+                    
+                default:
+                    break;
+            }
+            
+        }];
+ 
+         
+        [NSThread sleepForTimeInterval:1.0f];
+        
+    }
+
+}
+
+
+
+
+-(void) stopStressTest
+{
+    
+    self.stressing = NO;
+    [self.stressTestQueue cancelAllOperations];
     
     
 }
