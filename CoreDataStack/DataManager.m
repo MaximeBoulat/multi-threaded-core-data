@@ -121,8 +121,11 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
 
 -(void) startStressTestWithRelationhip: (NSManagedObjectID *) user
 {
-    
-    self.stressing = YES;
+    @synchronized(self.stressTestQueue)
+    {
+        self.stressing = YES;
+    }
+
     
     
     void (^writeBlock) (GameForSale*)= ^(GameForSale * game) {
@@ -231,15 +234,19 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
 
 }
 
-
+ 
 
 
 -(void) stopStressTest
 {
     
-    self.stressing = NO;
-    [self.stressTestQueue cancelAllOperations];
+    @synchronized(self.stressTestQueue)
+    {
+        self.stressing = NO;
+    }
+
     
+    [self.stressTestQueue cancelAllOperations];
     
 }
 
