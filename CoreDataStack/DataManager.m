@@ -119,18 +119,35 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
 
 
 
--(void) startStressTestWithRelationhip: (NSManagedObjectID *) user
+-(void) startStressTestWithRelationhip: (NSManagedObjectID *) platform
 {
     @synchronized(self.stressTestQueue)
     {
         self.stressing = YES;
     }
-
     
     
-    void (^writeBlock) (GameForSale*)= ^(GameForSale * game) {
+    void (^writeBlock) (void)= ^ {
         
-        [self insertGamePurchase:game relationship:user];
+        
+        [[CoreDataManager sharedCoreDataManager] coordinateWriting:^(NSManagedObjectContext *context) {
+            
+            int count = 0;
+            
+            while (count <= 20)
+            {
+                count ++;
+                
+                NSInteger gameIndex = arc4random() %self.gamesForSale.count;
+                GameForSale * game = self.gamesForSale [ gameIndex];
+                Game * newgame = [NSEntityDescription insertNewObjectForEntityForName:@"Game" inManagedObjectContext:context];
+                newgame.name = game.name;
+                newgame.platform = [context  existingObjectWithID:platform error:nil];
+                
+                
+            }
+            
+        } identifier:@"writeBlock"];
         
     };
     
@@ -146,7 +163,7 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
             
             for (Game * game in games)
             {
-                NSLog(@"Found game with name: %@", game.name);
+                NSString * name = game.name;  // This is intentionally not used, only purpose is to fire a fault
             }
             
         } identifier:@"readBlock"];
@@ -180,24 +197,17 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
     while (self.stressing)
     {
         
-        [self.stressTestQueue addOperationWithBlock:^{
+        DataManagerOperation * op = [DataManagerOperation new];
+        
+        
+        [op addExecutionBlock:^{
             
             NSInteger operationtype = arc4random() %3;
             
             switch (operationtype) {
                 case StressOperationTypeInsert: // insert 20 random records
                 {
-                    int count = 0;
-                    
-                    while (count <= 20)
-                    {
-                        count ++;
-                        
-                        NSInteger gameIndex = arc4random() %self.gamesForSale.count;
-                        
-                        writeBlock ((GameForSale*) self.gamesForSale[gameIndex]);
-                        
-                    }
+                    writeBlock ();
                 }
                     break;
                 case StressOperationTypeDelete: // delete random range of records
@@ -223,15 +233,26 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
                     
                 default:
                     break;
-            }
-            
+            } 
+             
         }];
- 
-         
-        [NSThread sleepForTimeInterval:1.0f];
         
+        
+        if (self.stressTestQueue.operationCount < self.stressTestQueue.maxConcurrentOperationCount) // give the core data queue a chance to catch up
+        {
+            [self.stressTestQueue addOperation:op];
+        }
+
+        
+        while ([CoreDataManager sharedCoreDataManager].coreDataQueue.operationCount > [CoreDataManager sharedCoreDataManager].coreDataQueue.maxConcurrentOperationCount)
+        {
+              [NSThread sleepForTimeInterval:1.0f];
+        }
+
     }
 
+    NSLog(@"No longer stressing, bailing with operations count: %lu", self.stressTestQueue.operationCount);
+    
 }
 
  
@@ -245,8 +266,9 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
         self.stressing = NO;
     }
 
-    
+    NSLog(@"Cancelling all the operations in the queue with count: %lu", (long) self.stressTestQueue.operationCount);
     [self.stressTestQueue cancelAllOperations];
+    [[CoreDataManager sharedCoreDataManager].coreDataQueue cancelAllOperations];
     
 }
 
@@ -304,5 +326,16 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
 
 
 
+
+@end
+
+
+@implementation DataManagerOperation
+
+- (void)dealloc
+{
+  //  NSLog(@"DataManagerOperation deallocating");
+    
+}
 
 @end

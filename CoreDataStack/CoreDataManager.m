@@ -20,7 +20,7 @@ typedef NS_ENUM(NSInteger, operationType){
 @property (readonly, strong, nonatomic) NSManagedObjectModel *managedObjectModel;
 @property (readonly, strong, nonatomic) NSPersistentStoreCoordinator *persistentStoreCoordinator;
 
-@property (nonatomic, strong) NSOperationQueue * coreDataQueue;
+
 
 @end
 
@@ -41,8 +41,8 @@ typedef NS_ENUM(NSInteger, operationType){
     });
     
     return sharedInstance;
-    
-}
+     
+} 
 
 
 - (instancetype)init
@@ -52,7 +52,7 @@ typedef NS_ENUM(NSInteger, operationType){
     {
         [self managedObjectContext]; // This creates the store, the coordinator and the main thread context
         self.coreDataQueue = [NSOperationQueue new];
-        self.coreDataQueue.maxConcurrentOperationCount = 5;
+        self.coreDataQueue.maxConcurrentOperationCount = 20;  // Tweak that to adjust performance
     }
     return self;
 }
@@ -69,7 +69,7 @@ typedef NS_ENUM(NSInteger, operationType){
 {
      [self serializeTransaction:block protected:NO identifier:identifier];
 }
-
+ 
 
 
 
@@ -82,7 +82,7 @@ typedef NS_ENUM(NSInteger, operationType){
 
 -(NSManagedObjectContext *) backgroundContext
 {
-    NSManagedObjectContext * context = [[NSManagedObjectContext alloc]initWithConcurrencyType:NSPrivateQueueConcurrencyType];
+    CoreDataContext * context = [[CoreDataContext alloc]initWithConcurrencyType:NSPrivateQueueConcurrencyType];
     context.parentContext = self.mainThreadContext;
     context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy;
     
@@ -103,18 +103,15 @@ typedef NS_ENUM(NSInteger, operationType){
      
      */
     
-    NSBlockOperation * coreDataOperation = [NSBlockOperation blockOperationWithBlock:^{
+    CoreDataOperation * coreDataOperation = [CoreDataOperation blockOperationWithBlock:^{
         
-        NSLog(@"operation of type: %@ identifier: %@ STARTING", protected? @"WRITE" : @"READ", identifier);
-        
-        
-        
-        
+//        NSLog(@"operation of type: %@ identifier: %@ STARTING", protected? @"WRITE" : @"READ", identifier);
+
         
         NSManagedObjectContext * context = [self backgroundContext];
         
-        __block __weak NSManagedObjectContext * weakContext = context;
-        
+        __weak NSManagedObjectContext * weakContext = context;
+          
         
         [context performBlockAndWait:^
          {
@@ -124,7 +121,7 @@ typedef NS_ENUM(NSInteger, operationType){
              
              [strongContext save:nil];
              
-             __block __weak NSManagedObjectContext * weakParentContext = strongContext.parentContext;
+             __weak NSManagedObjectContext * weakParentContext = weakContext.parentContext;
              
              [strongContext.parentContext performBlockAndWait:^{
                  
@@ -132,7 +129,7 @@ typedef NS_ENUM(NSInteger, operationType){
              }];
          }];
         
-        NSLog(@"operation of type: %@ identifier: %@ ENDING", protected? @"WRITE" : @"READ", identifier);
+//        NSLog(@"operation of type: %@ identifier: %@ ENDING", protected? @"WRITE" : @"READ", identifier);
         
     }];
     
@@ -144,6 +141,8 @@ typedef NS_ENUM(NSInteger, operationType){
     {
         coreDataOperation.name = [NSString stringWithFormat:@"%ld", (long)OperationTypeRead];
     }
+    
+    
     
     
     @synchronized(self)  //Synchronizing access to the queue! Multiple threads could be in there at the same time
@@ -234,7 +233,40 @@ typedef NS_ENUM(NSInteger, operationType){
     return _mainThreadContext;
 }
 
+ 
+ 
+
+@end
 
 
+@implementation CoreDataOperation
+
+-(void) main
+{
+    [super main];
+    
+    
+    /* The frequency of operations under stress conditions means that the queue never drains, therefore all the operations are retained by each other through their dependencies. This ensures that the operations release when they pop of the queue*/
+    
+     for (NSOperation * op in self.dependencies)
+    {
+        [self removeDependency:op];
+    } 
+}
+
+- (void)dealloc
+{
+    
+//    NSLog(@"Core Data operation deallocating");
+}
+
+@end
+
+@implementation CoreDataContext
+
+- (void) dealloc
+{
+  //  NSLog(@"Core Data context releasing");
+}
 
 @end

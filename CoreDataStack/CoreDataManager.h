@@ -20,7 +20,7 @@ typedef void(^CoreDataSerializedBlock)(NSManagedObjectContext *context);
 @interface CoreDataManager : NSObject
 
 @property (readonly, strong, nonatomic) NSManagedObjectContext *mainThreadContext; // This main thread context is leverages by the NSFetchedResultsControllers in the UI. It is not recommended to use it to write to Core Data, since doing so would bypass the serialization enforced in coordinateWriting/coordinateReading.
-
+@property (nonatomic, strong) NSOperationQueue * coreDataQueue;
 
 +(CoreDataManager *) sharedCoreDataManager;
 
@@ -33,5 +33,17 @@ typedef void(^CoreDataSerializedBlock)(NSManagedObjectContext *context);
 
 
 
+
+@end
+
+
+@interface CoreDataOperation : NSBlockOperation
+
+
+
+@end
+
+
+@interface CoreDataContext : NSManagedObjectContext
 
 @end

@@ -30,10 +30,14 @@
 - (void) deleteRecordWithID: (NSManagedObjectID *) objectId;
 
 
--(void) startStressTestWithRelationhip: (NSManagedObjectID *) user;
+-(void) startStressTestWithRelationhip: (NSManagedObjectID *) platform;
 -(void) stopStressTest;
 
 
 
+
+@end
+
+@interface DataManagerOperation : NSBlockOperation
 
 @end

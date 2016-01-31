@@ -20,7 +20,7 @@
 #import "DetailViewController.h"
 
 
-#define STRESS_TEST 0
+#define STRESS_TEST 1
 
 
 @interface MainTableViewController ()
