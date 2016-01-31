@@ -60,14 +60,14 @@ typedef NS_ENUM(NSInteger, operationType){
 #pragma mark - Public methods
 #pragma mark
 
--(void) coordinateWriting:(CoreDataSerializedBlock)block identifier:(NSString *)identifier
+-(void) coordinateWriting:(CoreDataSerializedBlock)block identifier:(NSString *)source
 {
-    [self serializeTransaction:block protected:YES identifier:identifier];
+    [self serializeTransaction:block protected:YES identifier:source];
 }
 
--(void) coordinateReading:(CoreDataSerializedBlock)block identifier:(NSString *)identifier
+-(void) coordinateReading:(CoreDataSerializedBlock)block identifier:(NSString *)source
 {
-     [self serializeTransaction:block protected:NO identifier:identifier];
+     [self serializeTransaction:block protected:NO identifier:source];
 }
  
 
@@ -90,7 +90,7 @@ typedef NS_ENUM(NSInteger, operationType){
 }
 
 
--(void) serializeTransaction:(CoreDataSerializedBlock) block protected: (BOOL) protected identifier: (NSString*) identifier
+-(void) serializeTransaction:(CoreDataSerializedBlock) block protected: (BOOL) protected identifier: (NSString*) source
 {
     
     /* This is where the magic happens. 
@@ -111,7 +111,7 @@ typedef NS_ENUM(NSInteger, operationType){
     
     CoreDataOperation * coreDataOperation = [CoreDataOperation blockOperationWithBlock:^{
         
-//        NSLog(@"operation of type: %@ identifier: %@ STARTING", protected? @"WRITE" : @"READ", identifier);
+        NSLog(@"operation of type: %@ identifier: %@ STARTING", protected? @"WRITE" : @"READ", source);
 
         
         NSManagedObjectContext * context = [self backgroundContext];
@@ -135,7 +135,7 @@ typedef NS_ENUM(NSInteger, operationType){
              }];
          }];
         
-//        NSLog(@"operation of type: %@ identifier: %@ ENDING", protected? @"WRITE" : @"READ", identifier);
+        NSLog(@"operation of type: %@ identifier: %@ ENDING", protected? @"WRITE" : @"READ", source);
         
     }];
     

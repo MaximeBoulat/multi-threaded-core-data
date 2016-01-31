@@ -82,7 +82,7 @@ NSFetchedResultsControllerDelegate
             [self.navigationResponder unwindNavigation:self];
         }
             break;
-        case NSFetchedResultsChangeUpdate:  // The data source has changes, update the screen
+        case NSFetchedResultsChangeUpdate:  // The data source has changes, update the screen not (not implemented in this sample)
         {
             [self loadScreen];
         }

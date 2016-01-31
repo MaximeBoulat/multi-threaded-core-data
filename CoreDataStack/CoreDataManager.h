@@ -25,11 +25,11 @@ typedef void(^CoreDataSerializedBlock)(NSManagedObjectContext *context);
 +(CoreDataManager *) sharedCoreDataManager;
 
 
-// The coordinateWriting API will 'barrier' the block parameter, preventing it from running concurrently to other blocks
--(void) coordinateWriting:(CoreDataSerializedBlock)block identifier: (NSString *) identifier;
+// The coordinateWriting API will 'barrier' the block parameter, preventing it from running concurrently to other blocks, the source param is for debugging.
+-(void) coordinateWriting:(CoreDataSerializedBlock)block identifier: (NSString *) source;
 
 // Read transactions are harmless, therefore they are not 'barriered' in the queue, however they must be prevented from running concurrently to write transactions
--(void) coordinateReading:(CoreDataSerializedBlock)block identifier: (NSString *) identifier;
+-(void) coordinateReading:(CoreDataSerializedBlock)block identifier: (NSString *) source;
 
 
 

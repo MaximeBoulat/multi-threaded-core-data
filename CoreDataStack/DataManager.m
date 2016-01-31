@@ -127,6 +127,15 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
     }
     
     
+    /* use private concurrent queue to bombard the CoreDataManager with database transactions. A while loop will randomely pick one of three transactions for every interation:
+     - Delete a random range of records
+     - Add 20 random records
+     - Fetch and read the records 4 times
+    
+     A couple of throttling mechanisms are in place to prevent queues from mushrooming
+     
+     */
+     
     void (^writeBlock) (void)= ^ {
         
         
@@ -234,11 +243,11 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
                 default:
                     break;
             } 
-             
+            
         }];
         
         
-        if (self.stressTestQueue.operationCount < self.stressTestQueue.maxConcurrentOperationCount) // give the core data queue a chance to catch up
+        if  (self.stressTestQueue.operationCount < self.stressTestQueue.maxConcurrentOperationCount) // give the core data queue a chance to catch up
         {
             [self.stressTestQueue addOperation:op];
         }
@@ -246,7 +255,7 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
         
         while ([CoreDataManager sharedCoreDataManager].coreDataQueue.operationCount > [CoreDataManager sharedCoreDataManager].coreDataQueue.maxConcurrentOperationCount)
         {
-              [NSThread sleepForTimeInterval:1.0f];
+              [NSThread sleepForTimeInterval:0.5f]; // Tweak with this to throttle intensity
         }
 
     }
