@@ -122,6 +122,50 @@ NavigationResponder
     
 }
 
+#pragma mark - public
+#pragma mark
+
+
+- (UIViewController *) viewControllerForSplitViewExpansion
+{
+    UIViewController * viewController;
+    
+    
+    switch (self.currentMode)
+    {
+        case TableModeUser:
+        case TableModePlatform:
+        {
+            viewController = [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"EmptyStateVC"];
+        }
+            break;
+        case TableModeGame:
+        {
+            if (self.tableView.indexPathForSelectedRow)
+            {
+                UINavigationController * detailNav = [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"DetailNav"];
+                DetailViewController * detail = detailNav.viewControllers [0];
+                detail.navigationResponder = self;
+                [detail loadGame:self.dataSource.fetchedObjects[self.tableView.indexPathForSelectedRow.row]];
+                viewController = detailNav;
+            }
+            else
+            {
+                viewController = [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"EmptyStateVC"];
+            }
+            
+            
+        }
+            break;
+            
+        default:
+            break;
+    }
+    
+    return viewController;
+    
+}
+
 
 #pragma mark - table view
 #pragma mark
@@ -418,11 +462,19 @@ NavigationResponder
 // THe detail pane is reporting to the master that the data source it's feeding from has been deleted. Letting the master make decisions about detail pane uypdates.
 
 -(void) unwindNavigation: (UIViewController *) viewController
-{
+{ 
     
     // Master will populate the detail pane with the empty state screen
     UIViewController * emptyState =  [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"EmptyStateVC"];
-    [self showDetailViewController:emptyState sender:self];
+    if (!self.splitViewController.collapsed)
+    {
+        [self showDetailViewController:emptyState sender:self];
+    }
+    else
+    {
+        [self.navigationController popViewControllerAnimated:YES];
+    }
+
     
 }
 

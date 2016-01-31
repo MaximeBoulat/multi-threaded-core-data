@@ -13,7 +13,7 @@ typedef NS_ENUM(NSInteger, operationType){
     OperationTypeRead,
     OperationTypeWrite
 };
-
+ 
 
 @interface CoreDataManager()
 
@@ -103,7 +103,7 @@ typedef NS_ENUM(NSInteger, operationType){
  
      FUN experiments:
      
-     * uncomment the NLogs inside the execution blocks and watch the writes and reads serialization in action
+     * uncomment the NLogs inside the execution block and watch the writes and reads serialization in action
      * comment out the dependency enforcement logic dowstream and watch the serialization unravel and Core Data complain about innaccessible objects
      * comment out the parent context save logic from the operation execution block and watch all the changes not be saved to disk
 

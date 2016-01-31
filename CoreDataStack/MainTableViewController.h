@@ -51,5 +51,7 @@ typedef NS_ENUM(NSInteger, TableMode) {
 @property (nonatomic, assign) TableMode currentMode;
 @property (nonatomic, weak) id <GamePurchaseProtocol> gamePurchaseDelegate;
 
+- (UIViewController *) viewControllerForSplitViewExpansion;
+
 
 @end

@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "MainTableViewController.h"
 
 @interface AppDelegate ()
 
@@ -22,8 +23,13 @@
     // Override point for customization after application launch.
     
     UISplitViewController * split = (UISplitViewController*) self.window.rootViewController;
-    split.delegate = self;
     split.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
+    
+    
+    
+    
+    split.delegate = self;
+
     
     
     
@@ -71,14 +77,34 @@
 
 - (BOOL)splitViewController:(UISplitViewController *)splitViewController collapseSecondaryViewController:(UIViewController *)secondaryViewController ontoPrimaryViewController:(UIViewController *)primaryViewController
 {
-    return YES;
+    
+    if([secondaryViewController isKindOfClass:[UINavigationController class]]) // Not the empty state screen
+    {
+        return NO;
+    }
+    else
+    {
+        return YES;
+    }
+    
+
     
 }
 
 - (nullable UIViewController *)splitViewController:(UISplitViewController *)splitViewController separateSecondaryViewControllerFromPrimaryViewController:(UIViewController *)primaryViewController
 {
+    // get the primary
     
-    return nil;
+    UIViewController * primary = ((UINavigationController *) primaryViewController).topViewController;
+    
+    if ([primary isKindOfClass:[MainTableViewController class]])
+    {
+       return [(MainTableViewController*) primary viewControllerForSplitViewExpansion];
+    }
+    else
+    {
+        return nil;
+    }
     
 }
 
