@@ -56,9 +56,10 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
     self = [super init];
     if (self)
     {
-        [self prepareGameStopInventory];
+        self.gamesForSale = [self prepareGameStopInventory];
         self.stressTestQueue = [NSOperationQueue new];
         self.stressTestQueue.maxConcurrentOperationCount = 20;
+
     }
     return self;
 }
@@ -289,50 +290,48 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
 #pragma mark - Helpers
 #pragma mark
     
--(void) prepareGameStopInventory
+-(NSArray *) prepareGameStopInventory
 {
-    GameForSale * uncharted = [GameForSale new];
-    uncharted.name = @"Uncharted";
-    
-    GameForSale * wolfenstein = [GameForSale new];
-    wolfenstein.name = @"Wolfenstein";
-    
-    GameForSale * lastOfUs = [GameForSale new];
-    lastOfUs.name = @"LastOfUs";
-    
-    GameForSale * godOfWar = [GameForSale new];
-    godOfWar.name = @"GodOfWar";
-    
-    GameForSale * metalGear = [GameForSale new];
-    metalGear.name = @"MetalGear";
-    
-    GameForSale * rainbowSix = [GameForSale new];
-    rainbowSix.name = @"RainbowSix";
-    
-    GameForSale * battlefield = [GameForSale new];
-    battlefield.name = @"Battlefield";
-    
-    GameForSale * farCry = [GameForSale new];
-    farCry.name = @"FarCry";
-    
-    GameForSale * witcher = [GameForSale new];
-    witcher.name = @"Witcher";
-    
-    GameForSale * metro = [GameForSale new];
-    metro.name = @"Metro";
-    
-    self.gamesForSale = @[uncharted,
-                          wolfenstein,
-                          lastOfUs,
-                          godOfWar,
-                          metalGear,
-                          rainbowSix,
-                          battlefield,
-                          farCry,
-                          witcher,
-                          metro];
 
+    NSMutableArray * games = [NSMutableArray new];
     
+    
+    NSString * jsonString = @"[\n"
+    "                          {\"name\": \"Uncharted\"},"
+    "                          {\"name\": \"Wolfenstein\"},"
+    "                          {\"name\": \"LastOfUs\"},"
+    "                          {\"name\": \"GodOfWar\"},"
+    "                          {\"name\": \"MetalGear\"},"
+    "                          {\"name\": \"RainbowSix\"},"
+    "                          {\"name\": \"Battlefield\"},"
+    "                          {\"name\": \"FarCry\"},"
+    "                          {\"name\": \"Witcher\"},"
+    "                          {\"name\": \"Metro\"}"
+    "]";
+    
+    NSData * jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
+    
+    NSError * error = nil;
+    NSArray * jSon = [NSJSONSerialization JSONObjectWithData:jsonData options:kNilOptions error:&error];
+    
+    
+    for (NSDictionary * dict in jSon)
+    {
+        GameForSale * newGame = [GameForSale new];
+        newGame.name = dict [@"name"];
+        [games addObject:newGame];
+ 
+    }
+    
+    /*
+    
+    NSData * jsonData2 = [NSJSONSerialization dataWithJSONObject:jSon options:kNilOptions error:nil];
+    NSString * jsonString2 = [[NSString alloc]initWithData:jsonData2 encoding:NSUTF8StringEncoding];
+    
+     */
+    
+    return [NSArray arrayWithArray:games];
+
 }
 
 
