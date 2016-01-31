@@ -95,11 +95,17 @@ typedef NS_ENUM(NSInteger, operationType){
     
     /* This is where the magic happens. 
      
-     All transactions are processed against a on-demand background child context which is instantiated for the lifetime and the transaction and then saved and discarded. The save is propagated to to the parent (the main thread context) so that the changes surface to the store.
+     All transactions are processed against a on-demand background child context which is instantiated for the lifetime and the transaction and then saved and discarded. The parent context is also saved (the main thread context) so that the changes propagate to the store.
      
      All write/protected operations are 'barriered' through dependencies defined when the operation is added to the queue (writes will just be dependent on all pending operations, and reads will be dependents only on those pending operations in the queue which are writes).
      
-     These conditions met, transactions, be them reads or writes, will never be faced with a context which is out of sync with the store. Since only writes can modify the store, and writes will only get servered with a context once the previous write has completed and its changes are surfaced to the main thread context, from which the new work context is drawn.
+     These conditions met, transactions, be them reads or writes, will never be faced with a context which is out of sync with the store. Since only writes can modify the store, and writes will only get served with a context once the previous write has completed and its changes are surfaced to the main thread context, from which the new work context is drawn.
+
+     FUN experiments:
+     
+     * comment out the dependency enforcement logic dowstream and watch Core Data complain about innaccessible objects
+     * comment out the parent context save logic from the operation execution block and watch all the changes not be saved to disk
+     
      
      */
     
@@ -246,7 +252,7 @@ typedef NS_ENUM(NSInteger, operationType){
     [super main];
     
     
-    /* The frequency of operations under stress conditions means that the queue never drains, therefore all the operations are retained by each other through their dependencies. This ensures that the operations release when they pop of the queue*/
+    /* The frequency of operations under stress conditions means that the queue never drains, therefore all the operations are retained by each other through their dependencies. The following ensures that the operations release when they pop of the queue*/
     
      for (NSOperation * op in self.dependencies)
     {

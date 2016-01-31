@@ -18,9 +18,9 @@
 #import "PlatformCell.h"
 #import "GameCell.h"
 #import "DetailViewController.h"
+ 
 
-
-#define STRESS_TEST 1
+#define STRESS_TEST 0
 
 
 @interface MainTableViewController ()

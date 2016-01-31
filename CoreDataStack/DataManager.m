@@ -169,7 +169,7 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
         } identifier:@"readBlock"];
         
     };
-    
+     
     
     void (^deleteBlock) (void) = ^{
         
@@ -250,9 +250,6 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
         }
 
     }
-
-    NSLog(@"No longer stressing, bailing with operations count: %lu", self.stressTestQueue.operationCount);
-    
 }
 
  
@@ -265,8 +262,6 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
     {
         self.stressing = NO;
     }
-
-    NSLog(@"Cancelling all the operations in the queue with count: %lu", (long) self.stressTestQueue.operationCount);
     [self.stressTestQueue cancelAllOperations];
     [[CoreDataManager sharedCoreDataManager].coreDataQueue cancelAllOperations];
     
