@@ -111,14 +111,14 @@ typedef NS_ENUM(NSInteger, operationType){
     
     CoreDataOperation * coreDataOperation = [CoreDataOperation blockOperationWithBlock:^{
         
-        NSLog(@"operation of type: %@ identifier: %@ STARTING", protected? @"WRITE" : @"READ", source);
+        NSLog(@"operation of type: %@ source: %@ STARTING", protected? @"WRITE" : @"READ", source);
 
         
         NSManagedObjectContext * context = [self backgroundContext];
         
         __weak NSManagedObjectContext * weakContext = context;
           
-        
+         
         [context performBlockAndWait:^
          {
              __strong NSManagedObjectContext * strongContext = weakContext;
@@ -135,7 +135,7 @@ typedef NS_ENUM(NSInteger, operationType){
              }];
          }];
         
-        NSLog(@"operation of type: %@ identifier: %@ ENDING", protected? @"WRITE" : @"READ", source);
+        NSLog(@"operation of type: %@ source: %@ ENDING", protected? @"WRITE" : @"READ", source);
         
     }];
     

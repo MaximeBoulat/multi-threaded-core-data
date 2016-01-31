@@ -108,15 +108,19 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
       [[CoreDataManager sharedCoreDataManager] coordinateWriting:^(NSManagedObjectContext *context) {
           
           NSManagedObject * record = [context existingObjectWithID:objectId error:nil];
-          [context deleteObject:record];
           
+          if (record)
+          {
+              [context deleteObject:record];
+          }
+
       } identifier:@"deleteRecordWithID"];
     
     
 }
 
 
-
+ 
 
 
 -(void) startStressTestWithRelationhip: (NSManagedObjectID *) platform
@@ -189,14 +193,17 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
                   NSFetchRequest * request = [NSFetchRequest fetchRequestWithEntityName:@"Game"];
                   NSArray * games = [context executeFetchRequest:request error:nil];
                   
-                  NSInteger index = arc4random() %games.count;
-                  
-                  for (int i = 0; i<index; i++)
+                  if (games.count)
                   {
-                      Game * game = games[i];
-                      [context deleteObject:game];
+                      NSInteger index = arc4random() %games.count;
+                      
+                      for (int i = 0; i<index; i++)
+                      {
+                          Game * game = games[i];
+                          [context deleteObject:game];
+                      }
                   }
-                  
+
                   
               }identifier:@"deleteBlock"];
         
