@@ -100,13 +100,13 @@ typedef NS_ENUM(NSInteger, operationType){
      All write/protected operations are 'barriered' through dependencies defined when the operation is added to the queue (writes will just be dependent on all pending operations, and reads will be dependents only on those pending operations in the queue which are writes).
      
      These conditions met, transactions, be them reads or writes, will never be faced with a context which is out of sync with the store. Since only writes can modify the store, and writes will only get served with a context once the previous write has completed and its changes are surfaced to the main thread context, from which the new work context is drawn.
-
+ 
      FUN experiments:
      
-     * comment out the dependency enforcement logic dowstream and watch Core Data complain about innaccessible objects
+     * uncomment the NLogs inside the execution blocks and watch the writes and reads serialization in action
+     * comment out the dependency enforcement logic dowstream and watch the serialization unravel and Core Data complain about innaccessible objects
      * comment out the parent context save logic from the operation execution block and watch all the changes not be saved to disk
-     
-     
+
      */
     
     CoreDataOperation * coreDataOperation = [CoreDataOperation blockOperationWithBlock:^{
