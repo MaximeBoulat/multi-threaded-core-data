@@ -60,7 +60,7 @@ NavigationResponder
     [super viewDidLoad];
     
     
-    /* All the lists are synchronized with the data in the core data store through the use of NSFetchedResultsController configured with the approproate fetch request. There is no hard depency between user input and UI updates. The user input (delete row/add record) triggers some data activity (in the DataManager layer). The NSFetchedResultsControllers delegate methods in turn notify the UI of changes in the data layer.
+    /* All the lists are synchronized with the data in the core data store through the use of NSFetchedResultsController configured with the appropriate fetch request. There are no hard depencies between user input and UI updates. The user input (delete row/add record) triggers some data activity (in the DataManager layer). The NSFetchedResultsControllers delegate methods in turn notify the UI of changes in the data layer.
      The only exception is the Store list, which is populated with a traditional array of non-persistent objects
      */
     
@@ -279,7 +279,7 @@ NavigationResponder
      *the games list which will populate the split's detail pane with game details.
      *the store list which invokes its delegate to execute a data transaction and modal dismissal (see didPickGame:)
      The subsequent lists need a reference called relationshipObject on which to predicate their FetchedResultsController's request. For Platforms it is a Player, for Games it is a Platform. Those relationships are enforced in the data layer and in the database schema.
-     The currentMode variable provides for state under which to configure its appesarance and behavior*/
+     The currentMode variable provides for state under which to configure appearance and behavior*/
     
     switch (self.currentMode)
     {
@@ -338,7 +338,7 @@ NavigationResponder
 - (IBAction)didPressPlusButton:(UIBarButtonItem *)sender
 {
     
-    /* Pressing the '+' button from the Games list invokes the Store screen (where user can 'purchase' games to add them to their personal inventory. Pressing the '+' button anywhere else displays a alertview from a record can be inserted with a custom name.*/
+    /* Pressing the '+' button from the Games list invokes the Store screen (where user can 'purchase' games to add them to their personal inventory). Pressing the '+' button anywhere else displays a alertview from a record can be inserted with a custom name.*/
     
     if (self.currentMode == TableModeGame)
     {
@@ -459,7 +459,7 @@ NavigationResponder
 #pragma mark - NavigationResponder
 #pragma mark
 
-// THe detail pane is reporting to the master that the data source it's feeding from has been deleted. Letting the master make decisions about detail pane uypdates.
+// THe detail pane is reporting to the master that the data source it's feeding from has been deleted. Letting the master make decisions about detail pane updates.
 
 -(void) unwindNavigation: (UIViewController *) viewController
 { 

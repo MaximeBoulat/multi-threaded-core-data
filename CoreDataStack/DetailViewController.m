@@ -30,7 +30,7 @@ NSFetchedResultsControllerDelegate
 
 -(void) loadGame: (Game*) game
 {
-    /* Configuring the FRC to the data source. Using KVO to prevent the UI, especially detail-type UIs which are often editable, from ever becoming des-synchronized with the underlying data. We dont want the user making edits on an object which no longer exists, and we dont want a user viewing a detail screen which is outdated.*/
+    /* Configuring the FRC to the data source. Using KVO to prevent the UI, especially detail-type UIs which are often editable, from ever becoming de-synchronized with the underlying data. We dont want the user making edits on an object which no longer exists, and we dont want a user viewing a detail screen which is outdated.*/
     
     NSFetchRequest * request = [[NSFetchRequest alloc]initWithEntityName:@"Game"];
     request.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES]];
@@ -82,7 +82,7 @@ NSFetchedResultsControllerDelegate
             [self.navigationResponder unwindNavigation:self];
         }
             break;
-        case NSFetchedResultsChangeUpdate:  // The data source has changes, update the screen not (not implemented in this sample)
+        case NSFetchedResultsChangeUpdate:  // The data source has changed, update the screen not (not implemented in this sample)
         {
             [self loadScreen];
         }

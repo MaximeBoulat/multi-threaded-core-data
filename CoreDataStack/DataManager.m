@@ -132,7 +132,7 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
     }
     
     
-    /* use private concurrent queue to bombard the CoreDataManager with database transactions. A while loop will randomely pick one of three transactions for every interation:
+    /* use private concurrent queue to bombard the CoreDataManager with database transactions. A while loop will randomly pick one of three transactions for every interation:
      - Delete a random range of records
      - Add 20 random records
      - Fetch and read the records 4 times

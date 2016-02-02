@@ -95,9 +95,9 @@ typedef NS_ENUM(NSInteger, operationType){
     
     /* This is where the magic happens. 
      
-     All transactions are processed against a on-demand background child context which is instantiated for the lifetime and the transaction and then saved and discarded. The parent context is also saved (the main thread context) so that the changes propagate to the store.
+     All transactions are processed against a on-demand background child context which is instantiated for the lifetime of the transaction and then saved and discarded. The parent context is also saved (the main thread context) so that the changes propagate to the store.
      
-     All write/protected operations are 'barriered' through dependencies defined when the operation is added to the queue (writes will just be dependent on all pending operations, and reads will be dependents only on those pending operations in the queue which are writes).
+     All write/protected operations are 'barriered' through dependencies defined when the operation is added to the queue (writes will just be dependent on all pending operations, and reads will be dependent only on those pending operations in the queue which are writes).
      
      These conditions met, transactions, be them reads or writes, will never be faced with a context which is out of sync with the store. Since only writes can modify the store, and writes will only get served with a context once the previous write has completed and its changes are surfaced to the main thread context, from which the new work context is drawn.
  
@@ -138,17 +138,6 @@ typedef NS_ENUM(NSInteger, operationType){
 //        NSLog(@"operation of type: %@ source: %@ ENDING", protected? @"WRITE" : @"READ", source);
         
     }];
-    
-    if (protected)  // enforcing the dependencies
-    {
-        coreDataOperation.name = [NSString stringWithFormat:@"%ld", (long)OperationTypeWrite];
-    }
-    else
-    {
-        coreDataOperation.name = [NSString stringWithFormat:@"%ld", (long)OperationTypeRead];
-    }
-    
-    
     
     
     @synchronized(self)  //Synchronizing access to the queue! Multiple threads could be in there at the same time
