@@ -139,6 +139,16 @@ typedef NS_ENUM(NSInteger, operationType){
         
     }];
     
+    if (protected)  // enforcing the dependencies
+    {
+        coreDataOperation.name = [NSString stringWithFormat:@"%ld", (long)OperationTypeWrite];
+    }
+    else
+    {
+        coreDataOperation.name = [NSString stringWithFormat:@"%ld", (long)OperationTypeRead];
+    }
+    
+     
     
     @synchronized(self)  //Synchronizing access to the queue! Multiple threads could be in there at the same time
     {
