@@ -25,7 +25,7 @@
     UISplitViewController * split = (UISplitViewController*) self.window.rootViewController;
     split.preferredDisplayMode = UISplitViewControllerDisplayModeAllVisible;
     
-    
+    // Testing
     
     
     split.delegate = self;
