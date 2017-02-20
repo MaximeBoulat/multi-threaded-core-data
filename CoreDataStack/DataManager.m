@@ -17,9 +17,6 @@
 @interface DataManager ()
 
 
-@property (nonatomic, strong) NSOperationQueue * stressTestQueue;
-
-
 
 
 @end
@@ -57,8 +54,6 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
     if (self)
     {
         self.gamesForSale = [self prepareGameStopInventory];
-        self.stressTestQueue = [NSOperationQueue new];
-        self.stressTestQueue.maxConcurrentOperationCount = 20;
 
     }
     return self;
@@ -126,18 +121,11 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
 
 -(void) startStressTestWithRelationhip: (NSManagedObjectID *) platform
 {
-    @synchronized(self.stressTestQueue)
-    {
-        self.stressing = YES;
-    }
     
-    
-    /* use private concurrent queue to bombard the CoreDataManager with database transactions. A while loop will randomly pick one of three transactions for every interation:
+    /* A while loop will randomly pick one of three transactions for every interation:
      - Delete a random range of records
      - Add 20 random records
      - Fetch and read the records 4 times
-    
-     A couple of throttling mechanisms are in place to prevent queues from mushrooming
      
      */
      
@@ -213,11 +201,12 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
     
     while (self.stressing)
     {
-        
-        DataManagerOperation * op = [DataManagerOperation new];
-        
-        
-        [op addExecutionBlock:^{
+		
+		// Dont let the queue mushroom
+		if ([CoreDataManager sharedCoreDataManager].coreDataQueue.operationCount > [CoreDataManager sharedCoreDataManager].coreDataQueue.maxConcurrentOperationCount) {
+			
+			[NSThread sleepForTimeInterval:0.1];
+		}
             
             NSInteger operationtype = arc4random() %3;
             
@@ -250,40 +239,13 @@ typedef NS_ENUM(NSInteger, StressOperationType) {
                     
                 default:
                     break;
-            } 
-            
-        }];
-        
-        
-        if  (self.stressTestQueue.operationCount < self.stressTestQueue.maxConcurrentOperationCount) // give the core data queue a chance to catch up
-        {
-            [self.stressTestQueue addOperation:op];
-        }
-
-        
-        while ([CoreDataManager sharedCoreDataManager].coreDataQueue.operationCount > [CoreDataManager sharedCoreDataManager].coreDataQueue.maxConcurrentOperationCount)
-        {
-              [NSThread sleepForTimeInterval:0.5f]; // Tweak with this to throttle intensity
-        }
-
+            }
+		
     }
+	
+	
+	    [[CoreDataManager sharedCoreDataManager].coreDataQueue cancelAllOperations];
 }
-
- 
-
-
--(void) stopStressTest
-{
-    
-    @synchronized(self.stressTestQueue)
-    {
-        self.stressing = NO;
-    }
-    [self.stressTestQueue cancelAllOperations];
-    [[CoreDataManager sharedCoreDataManager].coreDataQueue cancelAllOperations];
-    
-}
-
 
 
 

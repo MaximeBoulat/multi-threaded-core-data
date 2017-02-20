@@ -18,9 +18,6 @@
 #import "PlatformCell.h"
 #import "GameCell.h"
 #import "DetailViewController.h"
- 
-
-#define STRESS_TEST 0
 
 
 @interface MainTableViewController ()
@@ -30,9 +27,9 @@ GamePurchaseProtocol,
 NavigationResponder
 >
 
-
 @property (nonatomic, strong) NSFetchedResultsController * dataSource;
 @property (nonatomic, strong) NSManagedObject * relationshipObject;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *playButton;
 
 - (IBAction)didPressPlusButton:(UIBarButtonItem *)sender;
 
@@ -63,6 +60,8 @@ NavigationResponder
     /* All the lists are synchronized with the data in the core data store through the use of NSFetchedResultsController configured with the appropriate fetch request. There are no hard depencies between user input and UI updates. The user input (delete row/add record) triggers some data activity (in the DataManager layer). The NSFetchedResultsControllers delegate methods in turn notify the UI of changes in the data layer.
      The only exception is the Store list, which is populated with a traditional array of non-persistent objects
      */
+	
+	self.playButton.enabled = NO;
     
     NSFetchRequest * request;
     
@@ -91,6 +90,7 @@ NavigationResponder
         {
             self.navigationItem.leftBarButtonItem = nil;
             self.title = @"Games";
+			self.playButton.enabled = YES;
             request = [[NSFetchRequest alloc]initWithEntityName:@"Game"];
             request.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"name" ascending:YES]];
             request.predicate = [NSPredicate predicateWithFormat:@"platform == %@", self.relationshipObject];
@@ -153,8 +153,6 @@ NavigationResponder
             {
                 viewController = [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"EmptyStateVC"];
             }
-            
-            
         }
             break;
             
@@ -259,7 +257,6 @@ NavigationResponder
     {
         return YES;
     }
-
 }
 
 
@@ -329,11 +326,19 @@ NavigationResponder
 
 - (IBAction)unwindModal:(UIStoryboardSegue *)unwindSegue
 {
-    
     // This is apparently mandatory to implement the unwind (Exit) segue in the storyboard
+} 
+
+- (IBAction)didPressPlay:(id)sender {
+	
+	[DataManager sharedDataManager].stressing = ![DataManager sharedDataManager].stressing;
+	
+	dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,0), ^{
+		
+		[[DataManager sharedDataManager] startStressTestWithRelationhip:self.relationshipObject.objectID];
+	});
 }
 
- 
 
 - (IBAction)didPressPlusButton:(UIBarButtonItem *)sender
 {
@@ -342,22 +347,6 @@ NavigationResponder
     
     if (self.currentMode == TableModeGame)
     {
-        if (STRESS_TEST)
-        {
-            if ([DataManager sharedDataManager].stressing)
-            {
-                [[DataManager sharedDataManager] stopStressTest];
-            }
-            else
-            {
-                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT,0), ^{
-                    
-                    [[DataManager sharedDataManager] startStressTestWithRelationhip:self.relationshipObject.objectID];
-                });
-            }
-        }
-        else
-        {
             UINavigationController * storeNav = [[UIStoryboard storyboardWithName:@"Main" bundle:nil]instantiateViewControllerWithIdentifier:@"MainTableNav"];
             
             MainTableViewController * store = storeNav.viewControllers [0];
@@ -365,9 +354,6 @@ NavigationResponder
             store.gamePurchaseDelegate = self;
             
             [self presentViewController:storeNav animated:YES completion:nil];
-        }
-        
-
     }
     else
     {
@@ -388,8 +374,6 @@ NavigationResponder
         [self presentViewController:alert animated:YES completion:nil];
         
     }
-    
-     
 }
 
 
@@ -506,7 +490,5 @@ NavigationResponder
     }
     
 }
-
-
 
 @end

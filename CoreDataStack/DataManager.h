@@ -31,10 +31,6 @@
 
 
 -(void) startStressTestWithRelationhip: (NSManagedObjectID *) platform;
--(void) stopStressTest;
-
-
-
 
 @end
 
