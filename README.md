@@ -30,7 +30,7 @@ These APIs enqueue blocks into a private queue and enforces dependencies between
 This solution provides thread safety by spawning child contexts on demand. When a block is evaluated, it acquires a child context from the main thread context. Once the block has evaluated, and before the next operation starts, the changes are saved all the way up the context hierarchy, ensuring that the next operation’s context is not outdated. 
 
 ### Asynchronous UI updates using Fetched Results Controllers
-All the tableviews are hooked into the main thread context with FetchedResultsControllers calibrated to the results of a query. Since all commits made in the background using the hierarchy of contexts are surfaced to disk through the Main thread context, the FRCs callbacks are invoked accordingly and update their respective tables at the row level. 
+All the tableviews are hooked into the main thread context with FetchedResultsControllers calibrated to the results of a query. Since all commits made in the background using the hierarchy of contexts are surfaced to disk through the main thread context, the FRC callbacks are invoked accordingly and update their respective tables at the row level. 
 
 ### Stress test:
 
